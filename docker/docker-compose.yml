@@ -6,10 +6,8 @@ services:
         ports:
         - ${MARIADB_PORT_MAP}:3306
         volumes:
-        # config mysql
         - ./config/mariadb/home:/home/mysql
         - ./config/mariadb/mysql:/etc/mysql/conf.d
-        # Database storage
         - db_volume:/var/lib/mysql
         - db_pwd:/docker-entrypoint-initdb.d
         environment:
@@ -69,10 +67,12 @@ services:
         - ./docker/config/php/entrypoint.sh
         networks:
         - local_network
+
     networks:
     local_network:
         name: ${NETWORK}
         driver: bridge
+
     volumes:
     db_pwd:
         name : db_pwd_${ENVIROMENT}
@@ -80,11 +80,3 @@ services:
     db_volume:
         name: ${APP_NAME}_db_${ENVIROMENT}
 
-
-volumes:
-    postgres-db:
-
-networks:
-    local_network:
-        name: ${NETWORK}
-        driver: bridge

@@ -1,0 +1,12 @@
+FROM php:8.2-fpm
+
+RUN pecl install apcu && docker-php-ext-enable apcu
+ADD ./docker/config/php/conf.d/php.ini /usr/local/etc/php/conf.d
+
+WORKDIR /var/www
+ADD ./ /var/www
+RUN chown -R www-data:www-data /var/www/bootstrap
+RUN chown -R www-data:www-data /var/www/storage
+RUN chmod -R g+swx /var/www/bootstrap
+RUN chmod -R g+swx /var/www/storage
+USER www-data

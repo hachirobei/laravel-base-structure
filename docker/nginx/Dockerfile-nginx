@@ -1,0 +1,30 @@
+# Use the latest Nginx image as the base
+FROM nginx:latest
+
+# Pass the home domain as a build argument
+ARG home_domain
+
+# Remove any existing SSL private keys
+RUN rm -rf /etc/ssl/private
+
+# Create a new directory for SSL private keys
+RUN mkdir /etc/ssl/private
+
+# Generate a self-signed SSL certificate
+RUN openssl req -x509 -nodes -days 365 \
+    -subj "/C=MY/ST=SELANGOR/L=PUCHONG/O=DEVELOPER/CN=${home_domain}" \
+    -addext "subjectAltName=DNS:${home_domain}" \
+    -newkey rsa:2048 -keyout /etc/ssl/private/nginx-selfsigned.key \
+    -out /etc/ssl/certs/nginx-selfsigned.crt
+
+# Copy the Nginx configuration files into the container
+# You need to have an `nginx.conf` and any other required config files in your context
+COPY nginx.conf /etc/nginx/nginx.conf
+# If you have additional configuration files, copy them like this:
+# COPY your-config-file.conf /etc/nginx/conf.d/
+
+# Expose ports 80 and 443 for HTTP and HTTPS traffic
+EXPOSE 80 443
+
+# Start Nginx in the foreground
+CMD ["nginx", "-g", "daemon off;"]

@@ -1,0 +1,90 @@
+version: '3.9'
+services:
+    mariadb:
+        image: mariadb:${MARIADB_VERSION}
+        container_name: db_${APP_NAME}_${ENVIROMENT}
+        ports:
+        - ${MARIADB_PORT_MAP}:3306
+        volumes:
+        # config mysql
+        - ./config/mariadb/home:/home/mysql
+        - ./config/mariadb/mysql:/etc/mysql/conf.d
+        # Database storage
+        - db_volume:/var/lib/mysql
+        - db_pwd:/docker-entrypoint-initdb.d
+        environment:
+        - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+        - MYSQL_USER=${MYSQL_USER}
+        - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+        - MYSQL_DATABASE=${MYSQL_DATABASE}
+        networks:
+        - local_network
+    postgresdb:
+        image: postgres:alpine
+        container_name: db_${APP_NAME}_${ENVIROMENT}
+        ports:
+        - ${POSTGRES_PORT_MAP}:5432
+        volumes:
+        - postgres-db:/var/lib/postgresql/data
+        environment:
+        - POSTGRES_USER=${POSTGRES_USER}
+        - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+        - POSTGRES_DB=${POSTGRES_DB}
+        networks:
+        - local_network
+    mongodb:
+        image: mongo:${MONGO_VERSION}
+        container_name: mongo_${APP_NAME}_${ENVIROMENT}
+        ports:
+        - ${MONGO_PORT_MAP}:27017
+        volumes:
+        # Database storage
+        - mongo_volume:/var/lib/mongodb
+        environment:
+        - MONGO_INITDB_ROOT_USERNAME:${MONGO_INITDB_ROOT_USERNAME}
+        - MONGO_INITDB_ROOT_PASSWOR:${MONGO_INITDB_ROOT_PASSWORD}
+        networks:
+        - local_network
+    app:
+        container_name: ${APP_NAME}_${API_VERSION}_${ENVIROMENT}
+        build:
+        context: ../
+        dockerfile: ./docker/config/php/Dockerfile-php
+        args:
+            USER_ID: $UID
+            GROUP_ID: $GID
+        tty: true
+        volumes:
+        - ../:/var/www
+        - ./config/php/supervisor/:/etc/supervisor/conf.d/
+        links:
+        - mariadb
+        - postgresdb
+        - mangodb
+        depends_on:
+        - mariadb
+        - postgresdb
+        - mangodb
+        entrypoint:
+        - ./docker/config/php/entrypoint.sh
+        networks:
+        - local_network
+    networks:
+    local_network:
+        name: ${NETWORK}
+        driver: bridge
+    volumes:
+    db_pwd:
+        name : db_pwd_${ENVIROMENT}
+        external : true
+    db_volume:
+        name: ${APP_NAME}_db_${ENVIROMENT}
+
+
+volumes:
+    postgres-db:
+
+networks:
+    local_network:
+        name: ${NETWORK}
+        driver: bridge
